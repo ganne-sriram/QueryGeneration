@@ -1,0 +1,131 @@
+<div class="container">
+  <header class="header">
+    <h1>{{ title }}</h1>
+    <p class="subtitle">Natural Language to MySQL SQL Query Generation</p>
+  </header>
+
+  <div class="tabs">
+    <button 
+      class="tab" 
+      [class.active]="activeTab === 'query'"
+      (click)="activeTab = 'query'">
+      Query Generator
+    </button>
+    <button 
+      class="tab" 
+      [class.active]="activeTab === 'schema'"
+      (click)="activeTab = 'schema'">
+      Schema Browser
+    </button>
+  </div>
+
+  <div class="content" *ngIf="activeTab === 'query'">
+    <div class="query-section">
+      <h2>Ask a Question</h2>
+      <div class="input-group">
+        <textarea 
+          [(ngModel)]="question" 
+          placeholder="e.g., How many customers are there? or What is the total balance of all accounts?"
+          rows="3"
+          class="question-input"
+          (keydown)="onKeyDown($event)">
+        </textarea>
+        <button 
+          class="btn btn-primary" 
+          (click)="generateSQL()"
+          [disabled]="loading || !question.trim()">
+          {{ loading ? 'Generating...' : 'Generate SQL' }}
+        </button>
+      </div>
+      <p class="hint">Press Ctrl+Enter to generate</p>
+    </div>
+
+    <div class="results" *ngIf="queryResponse">
+      <div class="error-message" *ngIf="queryResponse.error">
+        <strong>Error:</strong> {{ queryResponse.error }}
+      </div>
+
+      <div class="result-section" *ngIf="!queryResponse.error">
+        <div class="section-header">
+          <h3>Generated SQL</h3>
+          <button class="btn btn-secondary" (click)="copySQL()">Copy</button>
+        </div>
+        <pre class="sql-output">{{ queryResponse.sql }}</pre>
+      </div>
+
+      <div class="result-section" *ngIf="!queryResponse.error && queryResponse.tables_used.length > 0">
+        <h3>Tables Used</h3>
+        <div class="tables-chips">
+          <span class="chip" *ngFor="let table of queryResponse.tables_used">
+            {{ table }}
+          </span>
+        </div>
+      </div>
+
+      <div class="result-section" *ngIf="!queryResponse.error && queryResponse.result">
+        <div class="section-header">
+          <h3>Query Results</h3>
+          <button class="btn btn-secondary" (click)="downloadCSV()">Download CSV</button>
+        </div>
+        <pre class="results-output">{{ formatResult(queryResponse.result) }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" *ngIf="activeTab === 'schema'">
+    <div class="schema-browser">
+      <h2>Database Schema</h2>
+      
+      <div class="loading" *ngIf="schemaLoading">
+        Loading schema...
+      </div>
+
+      <div class="tables-list" *ngIf="!schemaLoading">
+        <div class="table-item" *ngFor="let tableName of getTableNames()">
+          <div class="table-header" (click)="selectTable(tableName)">
+            <h3>{{ tableName }}</h3>
+            <span class="expand-icon">{{ selectedTable === tableName ? '▼' : '▶' }}</span>
+          </div>
+          
+          <div class="table-details" *ngIf="selectedTable === tableName">
+            <div class="columns-section">
+              <h4>Columns</h4>
+              <table class="columns-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Nullable</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let col of schema[tableName].columns">
+                    <td>
+                      <strong>{{ col.name }}</strong>
+                      <span class="pk-badge" *ngIf="schema[tableName].primary_keys.includes(col.name)">PK</span>
+                    </td>
+                    <td>{{ col.type }}</td>
+                    <td>{{ col.nullable ? 'Yes' : 'No' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="fk-section" *ngIf="schema[tableName].foreign_keys.length > 0">
+              <h4>Foreign Keys</h4>
+              <ul class="fk-list">
+                <li *ngFor="let fk of schema[tableName].foreign_keys">
+                  {{ fk.constrained_columns.join(', ') }} → {{ fk.referred_table }}.{{ fk.referred_columns.join(', ') }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Powered by Google Gemini | MySQL Database: citi_db</p>
+  </footer>
+</div>
