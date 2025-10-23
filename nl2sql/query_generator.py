@@ -31,11 +31,25 @@ class QueryGenerator:
             api_key=self.api_key
         )
         
-        template = """Based on the table schema below, write a SQL query that would answer the user's question:
-Remember : Only provide me the sql query dont include anything else. Provide me sql query in a single line dont add line breaks
+        template = """Based on the table schema below, write a MySQL SQL query that would answer the user's question.
+
+IMPORTANT RULES:
+1. Generate MYSQL syntax ONLY (not SQLite, PostgreSQL, or other dialects)
+2. For date functions, use MySQL functions: YEAR(), MONTH(), DATE_FORMAT(), DATE_SUB(), CURDATE(), NOW()
+3. Do NOT use strftime() or SQLite functions
+4. For extracting year from date: use YEAR(column_name)
+5. For date ranges: use BETWEEN or DATE_SUB(CURDATE(), INTERVAL n MONTH/DAY/YEAR)
+6. For GROUP BY: Include ALL non-aggregated columns in the GROUP BY clause (MySQL 8.0 strict mode)
+   Example: If SELECT a, b, COUNT(*) then GROUP BY a, b
+7. When using GROUP BY with HAVING, ensure all selected columns are either in GROUP BY or use aggregate functions
+8. For queries about "which" or "what" use JOIN with GROUP BY ORDER BY LIMIT instead of subqueries
+9. Only provide the SQL query, nothing else
+10. Provide the SQL query in a single line without line breaks
+
 Table Schema: {schema}
 Question: {question}
-SQL Query:
+
+MySQL SQL Query:
 """
         self.prompt = ChatPromptTemplate.from_template(template)
         
@@ -67,7 +81,17 @@ SQL Query:
         sql_query = re.sub(r'^```sql\s*\n?', '', sql_query, flags=re.IGNORECASE)
         sql_query = re.sub(r'^```\s*\n?', '', sql_query)
         sql_query = re.sub(r'\n?```$', '', sql_query)
-        return sql_query.strip()
+
+        # Remove "mysql" or "MySQL" prefix (sometimes LLM adds this)
+        sql_query = re.sub(r'^(mysql|MySQL)\s*\n?', '', sql_query, flags=re.IGNORECASE)
+
+        # Remove any leading/trailing whitespace and newlines
+        sql_query = sql_query.strip()
+
+        # Replace multiple spaces/newlines with single space
+        sql_query = re.sub(r'\s+', ' ', sql_query)
+
+        return sql_query
     
     def execute_query(self, sql_query):
         """Execute SQL query and return results."""
