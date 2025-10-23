@@ -67,7 +67,32 @@
           <h3>Query Results</h3>
           <button class="btn btn-secondary" (click)="downloadCSV()">Download CSV</button>
         </div>
-        <pre class="results-output">{{ formatResult(queryResponse.result) }}</pre>
+
+        <!-- Table view for array results -->
+        <div class="table-container" *ngIf="isArrayResult(queryResponse.result)">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th *ngFor="let header of getResultHeaders(queryResponse.result)">
+                  {{ header }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of getResultRows(queryResponse.result)">
+                <td *ngFor="let header of getResultHeaders(queryResponse.result)">
+                  {{ row[header] }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="more-rows-indicator" *ngIf="hasMoreRows(queryResponse.result)">
+            ... and {{ getRemainingRowCount(queryResponse.result) }} more rows
+          </div>
+        </div>
+
+        <!-- Text view for string/other results -->
+        <pre class="results-output" *ngIf="!isArrayResult(queryResponse.result)">{{ formatResult(queryResponse.result) }}</pre>
       </div>
     </div>
   </div>

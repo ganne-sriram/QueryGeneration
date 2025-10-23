@@ -94,10 +94,21 @@ MySQL SQL Query:
         return sql_query
     
     def execute_query(self, sql_query):
-        """Execute SQL query and return results."""
+        """Execute SQL query and return results as list of dictionaries."""
         try:
-            result = self.db.run(sql_query)
-            return result
+            from sqlalchemy import text
+
+            # Execute query directly to get proper result rows
+            with self.db._engine.connect() as connection:
+                result = connection.execute(text(sql_query))
+
+                # Convert to list of dictionaries with column names
+                columns = result.keys()
+                rows = result.fetchall()
+
+                # Return as list of dictionaries for JSON serialization
+                return [dict(zip(columns, row)) for row in rows]
+
         except Exception as e:
             raise Exception(f"Error executing query: {e}")
     

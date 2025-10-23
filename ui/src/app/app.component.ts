@@ -151,30 +151,59 @@ export class AppComponent implements OnInit {
     if (!result) {
       return 'No results';
     }
-    
+
     if (typeof result === 'string') {
       return result;
     }
-    
+
     if (Array.isArray(result)) {
       if (result.length === 0) {
         return 'No results';
       }
-      
+
       const headers = Object.keys(result[0]);
       let output = headers.join(' | ') + '\n';
       output += headers.map(() => '---').join(' | ') + '\n';
-      output += result.slice(0, 100).map(row => 
+      output += result.slice(0, 100).map(row =>
         headers.map(h => row[h] || '').join(' | ')
       ).join('\n');
-      
+
       if (result.length > 100) {
         output += `\n... (${result.length - 100} more rows)`;
       }
-      
+
       return output;
     }
-    
+
     return JSON.stringify(result, null, 2);
+  }
+
+  isArrayResult(result: any): boolean {
+    return Array.isArray(result) && result.length > 0;
+  }
+
+  getResultHeaders(result: any): string[] {
+    if (this.isArrayResult(result)) {
+      return Object.keys(result[0]);
+    }
+    return [];
+  }
+
+  getResultRows(result: any): any[] {
+    if (this.isArrayResult(result)) {
+      return result.slice(0, 100); // Show first 100 rows
+    }
+    return [];
+  }
+
+  hasMoreRows(result: any): boolean {
+    return Array.isArray(result) && result.length > 100;
+  }
+
+  getRemainingRowCount(result: any): number {
+    if (Array.isArray(result)) {
+      return result.length - 100;
+    }
+    return 0;
   }
 }
