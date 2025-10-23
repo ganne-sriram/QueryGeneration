@@ -30,7 +30,7 @@ interface SchemaTable {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  title = 'QueryGeneration - NL2SQL for citi_db';
+  title = 'Query Generation';
   
   question = '';
   loading = false;
